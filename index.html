@@ -1,0 +1,511 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>车速感应型助力特性 · 汽车设计第8章</title>
+  <style>
+:root {
+  color-scheme: light;
+  --ink: #162d3f;
+  --muted: #4e6070;
+  --page: #eef3f6;
+  --panel: #fff;
+  --inset: #f6f9fb;
+  --rule: #ccd9e1;
+  --nav: #132c3c;
+  --teal: #006c65;
+  --teal-soft: #e6f5f1;
+  --orange: #a5450c;
+  --orange-soft: #fff2e4;
+  --blue: #2b5f91;
+  --radius: 15px;
+  font-family: 'Microsoft YaHei UI', 'PingFang SC', 'Noto Sans CJK SC', system-ui, sans-serif;
+  font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; color: var(--ink); background: var(--page); line-height: 1.6; }
+button, input { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid #067e73; outline-offset: 3px; }
+[hidden] { display: none !important; }
+.shell { width: min(1320px, calc(100% - 64px)); margin-inline: auto; }
+.top { background: var(--nav); color: #ecf4f7; }
+.top .shell { display: flex; justify-content: space-between; align-items: center; gap: 12px 20px; min-height: 62px; }
+.brand { font-weight: 700; letter-spacing: .02em; white-space: nowrap; }
+.top nav { display: flex; flex-wrap: wrap; gap: 4px; padding: 7px 0; }
+.top nav a, .top nav [aria-current] { display: block; padding: 6px 11px; border-radius: 6px; color: #d4e3ea; font-size: .9rem; text-decoration: none; }
+.top nav a:hover { background: #214658; color: white; }
+.top nav [aria-current] { color: #d5fff2; background: #214f50; font-weight: 700; }
+.top a:focus-visible { outline-color: #9de3d8; }
+.hero { display: flex; justify-content: space-between; align-items: end; gap: 16px; margin-block: 30px 23px; }
+.hero .eyebrow { color: var(--teal); font-weight: 700; font-size: .9rem; margin: 0 0 4px; }
+h1 { font-size: clamp(1.75rem,3vw,2.55rem); line-height: 1.2; letter-spacing: -.026em; margin: 0 0 10px; }
+.hero p { margin: 0; color: var(--muted); }
+h2 { margin: 0; font-size: 1.2rem; line-height: 1.35; }
+h3 { margin: 0; font-size: 1rem; line-height: 1.4; }
+p { margin: 0; }
+.panel { background: var(--panel); border: 1px solid var(--rule); border-radius: var(--radius); }
+.lab { display: grid; grid-template-columns: minmax(285px, .88fr) minmax(0, 2.35fr); gap: 17px; align-items: start; }
+.lab > *, .learn > * { min-width: 0; }
+.controls { padding: 19px 18px; }
+.controls h2 { margin-bottom: 12px; }
+.controls h3 { margin-bottom: 8px; }
+.note { color: var(--muted); font-size: .875rem; }
+.btn, .pills button { color: var(--ink); background: white; border: 1px solid #b7c9d4; border-radius: 8px; padding: 8px 12px; font-size: .89rem; font-weight: 650; }
+.btn:hover, .pills button:hover { color: var(--teal); border-color: var(--teal); background: #f0faf7; }
+.btn { white-space: nowrap; }
+.pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.pills button[aria-pressed="true"] { color: var(--teal); border-color: #519c91; background: var(--teal-soft); }
+.control { margin-top: 16px; }
+.field-head { display: grid; align-items: center; grid-template-columns: minmax(0,1fr) auto; gap: 7px; }
+.field-head label { font-weight: 700; font-size: .88rem; line-height: 1.35; }
+.number-box { display: inline-flex; align-items: center; justify-content: end; gap: 5px; }
+.number-box [data-number] { width: 4.6rem; padding: 4px 6px; border: 1px solid #bcced8; border-radius: 6px; color: var(--ink); background: var(--inset); text-align: end; font-variant-numeric: tabular-nums; }
+.number-box span { font-size: .77rem; color: var(--muted); white-space: nowrap; }
+[data-range] { display: block; width: 100%; margin: 9px 0 0; accent-color: var(--teal); cursor: pointer; }
+.range-notes { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); line-height: 1.4; }
+.subpanel { margin-top: 16px; border-top: 1px solid var(--rule); padding-top: 14px; }
+.readout { padding: 17px 18px 15px; }
+.metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin: 0 0 16px; }
+.metric { background: var(--inset); border: 1px solid var(--rule); border-top: 3px solid #92b6c2; padding: 11px 12px 10px; border-radius: 9px; }
+.metric.primary { background: var(--teal-soft); border-color: #b4d8ce; border-top-color: var(--teal); }
+.metric dt { color: var(--muted); font-weight: 650; font-size: .85rem; line-height: 1.35; }
+.metric dd { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 5px; margin: 6px 0 0; font-variant-numeric: tabular-nums; font-size: clamp(1.2rem,2.6vw,1.85rem); line-height: 1.12; font-weight: 790; overflow-wrap: anywhere; }
+.metric dd small { color: var(--muted); font-size: .75rem; font-weight: 650; }
+.metric .compact { font-size: clamp(1.03rem, 2vw, 1.34rem); }
+.chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: 5px 12px; flex-wrap: wrap; }
+.chart-head h2 { font-size: 1.08rem; }
+.chart-head .note { text-align: end; }
+.chart-frame { position: relative; margin-top: 7px; background: #fdfeff; border: 1px solid var(--rule); border-radius: 9px; height: 350px; overflow: hidden; }
+.chart-frame canvas { display: block; width: 100%; height: 100%; touch-action: pan-y; }
+.chart-frame canvas[data-clickable] { cursor: crosshair; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 18px; margin-top: 8px; color: var(--muted); font-size: .875rem; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.swatch { display: inline-block; width: 18px; height: 0; border-top: 3px solid var(--color, var(--teal)); }
+.swatch.dashed { border-top-style: dashed; }
+.chart-notes { margin: 9px 0 0; color: var(--muted); font-size: .875rem; }
+.status { margin-top: 12px; padding: 9px 11px; color: var(--ink); background: var(--inset); border: 1px solid var(--rule); border-radius: 8px; font-size: .9rem; }
+.status strong { color: var(--teal); }
+.force-rows { margin-top: 13px; display: grid; gap: 8px; }
+.force-head { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .84rem; font-variant-numeric: tabular-nums; }
+.load-bar { height: 10px; margin-top: 4px; background: #e4edf1; border-radius: 5px; overflow: hidden; display: flex; }
+.load-bar .driver { background: #13786f; }
+.load-bar .motor { background: #d1781d; }
+.tablescroll { overflow-x: auto; margin-top: 11px; border: 1px solid var(--rule); border-radius: 9px; }
+table { width: 100%; border-collapse: collapse; font-size: .875rem; font-variant-numeric: tabular-nums; }
+th, td { padding: 8px 9px; text-align: start; vertical-align: middle; }
+thead { color: var(--muted); background: var(--inset); }
+tbody tr + tr { border-top: 1px solid var(--rule); }
+tbody th { font-weight: 700; }
+tr.current { background: var(--teal-soft); }
+.speed-library { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 5px; margin-top: 7px; }
+.speed-library button { display: grid; justify-items: center; padding: 4px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.speed-library i { width: 17px; margin-bottom: 3px; border-top: 3px solid var(--color); }
+.mode-buttons button { flex: 1; padding-inline: 6px; white-space: nowrap; }
+.zone-key { display: grid; grid-template-columns: repeat(3,1fr); color: var(--muted); font-size: .84rem; margin-top: 9px; gap: 5px; }
+.zone-key span { padding: 6px; text-align: center; border-radius: 6px; background: #f0f3f6; }
+.zone-key b { color: var(--teal); }
+.zone-key [data-selected="true"] { background: var(--teal-soft); color: var(--ink); box-shadow: inset 0 0 0 1px #7cb7ac; }
+.learn { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 17px; margin-block: 17px; }
+.learn > .panel { padding: 17px 18px; }
+.learn h2 { margin-bottom: 8px; font-size: 1.09rem; }
+.math { padding: 8px 11px; border-inline-start: 3px solid #69a9a0; background: var(--inset); margin-block: 8px; line-height: 1.65; overflow-wrap: anywhere; }
+.math div + div { margin-top: 3px; }
+.learn .note + .note { margin-top: 8px; }
+summary { cursor: pointer; color: var(--ink); padding-block: 8px; }
+details + details { border-top: 1px solid var(--rule); }
+details p { padding: 0 0 8px 17px; }
+footer { color: var(--muted); margin: 0 0 22px; font-size: .83rem; }
+@media (max-width: 1010px) {
+  .shell { width: calc(100% - 38px); }
+  .lab { grid-template-columns: minmax(240px, .77fr) minmax(0, 1.5fr); gap: 12px; }
+  .controls, .readout { padding-inline: 13px; }
+}
+@media (max-width: 760px) {
+  .shell { width: calc(100% - 24px); }
+  .top .shell { align-items: start; gap: 1px; flex-direction: column; padding-top: 9px; }
+  .top nav { padding: 4px 0 8px; }
+  .top nav a, .top nav [aria-current] { padding-inline: 7px; font-size: .83rem; }
+  .hero { align-items: start; margin-block: 18px 13px; flex-direction: column; gap: 11px; }
+  .lab, .learn { grid-template-columns: minmax(0,1fr); }
+  .controls h2 { margin-bottom: 8px; }
+  .chart-frame { height: 288px; }
+  .metrics { gap: 5px; }
+  .metric { padding: 8px 6px; }
+  .metric dt { font-size: .78rem; }
+  .chart-head .note { text-align: start; }
+}
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <div class="top"><div class="shell">
+    <span class="brand">《汽车设计》 · 第8章 转向系统设计</span>
+    <nav aria-label="电动助力转向教学工具"><a href="8.5-%E7%94%B5%E5%8A%A8%E5%8A%A9%E5%8A%9B%E8%BD%AC%E5%90%91%E7%9A%84%E8%BD%BB%E4%BE%BF%E6%80%A7%E4%B8%8E%E8%B7%AF%E6%84%9F.html">轻便性与路感</a>
+<a href="8.5-%E7%9B%B4%E7%BA%BF%E5%9E%8B%E5%8A%A9%E5%8A%9B%E7%89%B9%E6%80%A7-%E5%9B%BE8-44%E4%B8%8E%E5%9B%BE8-45.html">直线型助力</a>
+<span aria-current="page">车速感应型助力</span></nav>
+  </div></div>
+  <main class="shell">
+    <header class="hero">
+      <div><p class="eyebrow">电动助力转向（EPS） · 图8-46</p><h1>车速感应型助力特性</h1><p>沿车速切换助力曲线，比较固定手轮力矩和固定转向阻力矩这两种试验。</p></div>
+      <button type="button" class="btn" id="reset">恢复初始值</button>
+    </header>
+    <div class="lab">
+      <aside class="panel controls" aria-label="试验设置"><h2>试验设置</h2>
+<div class="pills mode-buttons" aria-label="控制条件">
+  <button type="button" data-mode="hand" aria-pressed="true">固定转向盘力矩</button>
+  <button type="button" data-mode="resistance" aria-pressed="false">固定转向阻力矩</button>
+</div><div class="control">
+  <div class="field-head">
+    <label id="speed-label" for="speed">车速 v<sub>a</sub></label>
+    <span class="number-box"><input type="number" data-number id="speed-number" aria-labelledby="speed-label" min="0" max="113" step="1" value="40"><span>km/h</span></span>
+  </div>
+  <input type="range" data-range id="speed" min="0" max="113" step="1" value="40">
+  <div class="range-notes" aria-hidden="true"><span>0</span><span>113</span></div>
+</div><div id="hand-settings"><div class="control">
+  <div class="field-head">
+    <label id="hand-label" for="hand">转向盘力矩 M<sub>h</sub></label>
+    <span class="number-box"><input type="number" data-number id="hand-number" aria-labelledby="hand-label" min="-8" max="8" step="0.05" value="3"><span>N·m</span></span>
+  </div>
+  <input type="range" data-range id="hand" min="-8" max="8" step="0.05" value="3">
+  <div class="range-notes" aria-hidden="true"><span>-8</span><span>8</span></div>
+</div></div><div id="load-settings" hidden><div class="control">
+  <div class="field-head">
+    <label id="resistance-label" for="resistance">等效转向阻力矩 M<sub>z</sub></label>
+    <span class="number-box"><input type="number" data-number id="resistance-number" aria-labelledby="resistance-label" min="-16" max="16" step="0.1" value="12"><span>N·m</span></span>
+  </div>
+  <input type="range" data-range id="resistance" min="-16" max="16" step="0.1" value="12">
+  <div class="range-notes" aria-hidden="true"><span>-16</span><span>16</span></div>
+</div></div><div class="subpanel"><h3>图8-46的车速节点（km/h）</h3>
+  <div class="pills speed-library" id="speeds"></div>
+  <p class="note" style="margin-top:8px">点击节点选取对应曲线。中间车速按相邻节点线性插值。</p>
+</div></aside>
+      <section class="panel readout" aria-label="实时仿真结果"><dl class="metrics"><div class="metric primary"><dt>转向盘力矩 M<sub>h</sub></dt><dd><span id="hand-reading">—</span><small>N·m</small></dd></div>
+<div class="metric"><dt>电机助力矩 M<sub>a</sub></dt><dd><span id="assist-reading">—</span><small>N·m</small></dd></div>
+<div class="metric"><dt>当量路感 E<sub>d</sub></dt><dd class="compact"><span id="feel-reading">—</span></dd></div></dl><div class="chart-head"><h2>同一车辆的多车速助力曲线</h2><p class="note">橙线为当前车速，圆点为当前输入</p></div>
+<div class="chart-frame"><canvas id="graph" role="img" aria-label="按图8-46近似重建的七条车速特性，纵轴为助力矩幅值，灰蓝曲线代表各速度节点，橙色为当前速度。"></canvas></div><p class="chart-notes" id="model-point"></p>
+<div class="tablescroll"><table aria-label="同一控制条件下的车速对比">
+  <thead><tr><th scope="col">车速（km/h）</th><th scope="col">转向盘力矩（N·m）</th><th scope="col">助力矩（N·m）</th><th scope="col">局部 E<sub>d</sub></th></tr></thead>
+  <tbody id="speed-comparison"></tbody>
+</table></div>
+<p class="status" id="speed-status" role="status"></p></section>
+    </div>
+    <section class="learn">
+  <article class="panel"><h2>车速怎样进入助力控制</h2><div class="math">
+  <div>M<sub>a</sub> 是 M<sub>h</sub> 与 v<sub>a</sub> 的函数</div>
+  <div>B 段斜率 K(v<sub>a</sub>)＝|M<sub>a,max</sub>(v<sub>a</sub>)|/(5.5−1.0)</div>
+  <div>在同一阻力矩下，由 M<sub>z</sub>＝M<sub>h</sub>＋M<sub>a</sub> 反求手轮力矩。</div>
+</div>
+<p class="note">按图8-46近似取起助点 1.0 N·m、饱和所需输入 5.5 N·m，节点最大助力矩依次取 43、32、23、15、11、9、8 N·m。车辆转向时的实际阻力随工况变化，比较时按所选控制条件保持对应输入不变。</p></article>
+  <article class="panel"><h2>课堂探究</h2><details><summary>将转向盘力矩保持在 3 N·m，比较 0、40 和 113 km/h。哪个工况助力最大？</summary>
+  <p class="note">原地助力最大。三个工况都处于 B 段，随着车速增加，曲线斜率和助力下降，当量路感上升。</p></details>
+<details><summary>保持 M<sub>z</sub>＝12 N·m，车速变高时，驾驶员需要怎样改变输入？</summary>
+  <p class="note">为克服相同阻力，助力减少时，手轮所需力矩增大。比较表中 0 和 113 km/h 的两组力矩之和应相同。</p></details>
+<details><summary>把转向盘力矩调到 0.5 N·m，再改变车速。助力还会随车速变吗？</summary>
+  <p class="note">该点仍处在无助力区 A，所有节点的助力矩为零。车速敏感的差异可在助力变化区和饱和高度上观察。</p></details></article>
+</section>
+    <footer>《汽车设计》第5版 · 印刷第285–286页 · 图8-46 · 近似读图重建</footer>
+  </main>
+  <script>
+'use strict';
+
+const byId = id => document.getElementById(id);
+const clip = (value, min, max) => Math.max(min, Math.min(max, value));
+const text = (id, value) => { byId(id).textContent = value; };
+const fmt = (value, digits = 2) => (Math.abs(value) < 0.5 * 10**-digits ? 0 : value).toFixed(digits).replace('-', '−');
+const percent = (part, digits = 1) => `${fmt(100 * part, digits)}%`;
+const value = id => byId(id).valueAsNumber;
+const colors = { teal: '#00756d', orange: '#b85213', slate: '#5b7388', ink: '#162d3f' };
+
+function setControl(id, next) {
+  const range = byId(id);
+  range.value = String(clip(next, Number(range.min), Number(range.max)));
+  byId(`${id}-number`).value = range.value;
+}
+
+function setControls(values) {
+  Object.entries(values).forEach(([id, next]) => setControl(id, next));
+}
+
+function bindControls(update) {
+  for (const range of document.querySelectorAll('[data-range]')) {
+    const number = byId(`${range.id}-number`);
+    range.addEventListener('input', () => {
+      number.value = range.value;
+      update();
+    });
+    number.addEventListener('input', () => {
+      const next = number.valueAsNumber;
+      if (Number.isFinite(next) && next >= Number(range.min) && next <= Number(range.max)) {
+        range.value = number.value;
+        update();
+      }
+    });
+    number.addEventListener('change', () => {
+      setControl(range.id, Number.isFinite(number.valueAsNumber) ? number.valueAsNumber : range.valueAsNumber);
+      update();
+    });
+  }
+}
+
+function paint(canvas, spec) {
+  const {clientWidth: width, clientHeight: height} = canvas;
+  if (!width || !height) return null;
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const pxWidth = Math.round(width*dpr), pxHeight = Math.round(height*dpr);
+  if (canvas.width !== pxWidth || canvas.height !== pxHeight) {
+    canvas.width = pxWidth;
+    canvas.height = pxHeight;
+  }
+  const c = canvas.getContext('2d');
+  c.setTransform(pxWidth/width, 0, 0, pxHeight/height, 0, 0);
+  c.clearRect(0, 0, width, height);
+  const {xmin,xmax,ymin,ymax} = spec;
+  const left = width < 410 ? 43 : 55, right = width - 17;
+  const top = 34, bottom = height - 53;
+  const x = v => left+(v-xmin)/(xmax-xmin)*(right-left);
+  const y = v => bottom-(v-ymin)/(ymax-ymin)*(bottom-top);
+  const line = (ax,ay,bx,by) => { c.beginPath(); c.moveTo(ax,ay); c.lineTo(bx,by); c.stroke(); };
+
+  c.save();
+  c.beginPath();
+  c.rect(left, top, right-left, bottom-top);
+  c.clip();
+  for (const band of spec.bands ?? []) {
+    c.fillStyle = band.color;
+    c.fillRect(x(band.from),top,x(band.to)-x(band.from),bottom-top);
+  }
+  c.strokeStyle = '#e0e8ee';
+  c.lineWidth = 1;
+  for (const v of spec.xticks) line(x(v),top,x(v),bottom);
+  for (const v of spec.yticks) line(left,y(v),right,y(v));
+  for (const mark of spec.guides ?? []) {
+    c.setLineDash(mark.dash ?? [4,4]);
+    c.strokeStyle = mark.color ?? '#7b919f';
+    line(x(mark.x),top,x(mark.x),bottom);
+  }
+  for (const series of spec.series) {
+    c.strokeStyle = series.color;
+    c.setLineDash(series.dash ?? []);
+    c.lineWidth = series.width ?? 2;
+    c.lineJoin = 'round';
+    c.beginPath();
+    series.points.forEach(([xs,ys], i) => i ? c.lineTo(x(xs),y(ys)) : c.moveTo(x(xs),y(ys)));
+    c.stroke();
+  }
+  c.restore();
+
+  c.lineWidth = 1;
+  c.strokeStyle = '#7690a1';
+  line(left,top,left,bottom);
+  line(left,bottom,right,bottom);
+  if (xmin < 0 && xmax > 0) line(x(0),top,x(0),bottom);
+  c.font = `12px 'Microsoft YaHei UI',system-ui,sans-serif`;
+  c.fillStyle = '#4e6070';
+  c.textBaseline = 'middle';
+  c.textAlign = 'right';
+  for (const v of spec.yticks) c.fillText(fmt(v, 0),left-8,y(v));
+  c.textAlign = 'center';
+  for (const v of spec.xticks) c.fillText(fmt(v, 0),x(v),bottom+14);
+  c.font = `600 12px 'Microsoft YaHei UI',system-ui,sans-serif`;
+  c.fillStyle = colors.ink;
+  c.textAlign = 'left';
+  c.fillText(spec.ylabel,left,16);
+  c.textAlign = 'right';
+  c.fillText(spec.xlabel,right,height-12);
+  for (const mark of spec.markers ?? []) {
+    c.beginPath();
+    c.arc(x(mark.x),y(mark.y),5,0,2*Math.PI);
+    c.fillStyle = '#fff';
+    c.fill();
+    c.lineWidth = 2.5;
+    c.strokeStyle = mark.color;
+    c.stroke();
+  }
+  return {left,right,top,bottom,xmin,xmax};
+}
+
+function plot(id, createSpec, onPick) {
+  const canvas = byId(id);
+  let geometry;
+  const draw = () => { geometry = paint(canvas, createSpec()); };
+  new ResizeObserver(draw).observe(canvas.parentElement);
+  if (onPick) {
+    canvas.dataset.clickable = '';
+    canvas.addEventListener('click', event => {
+      const {left,right,top,bottom,xmin,xmax} = geometry;
+      const box = canvas.getBoundingClientRect();
+      const x = event.clientX-box.left, y = event.clientY-box.top;
+      if (x >= left && x <= right && y >= top && y <= bottom) onPick(xmin+(x-left)/(right-left)*(xmax-xmin));
+    });
+  }
+  return draw;
+}
+
+function ticks(min, max, step) {
+  return Array.from({length: Math.round((max-min)/step)+1}, (_,i) => min+i*step);
+}
+
+function characteristic(input, cutIn, cap, gain) {
+  const torque = Math.abs(input);
+  const limit = cutIn+cap/gain;
+  const magnitude = clip(gain*(torque-cutIn),0,cap);
+  const side = Math.sign(input);
+  const atStart = Math.abs(torque-cutIn) < 1e-7;
+  const atLimit = Math.abs(torque-limit) < 1e-7;
+  const zone = atStart ? '起助点' : atLimit ? '饱和点' : torque < cutIn ? 'A' : torque < limit ? 'B' : 'D';
+  return { input, magnitude, assist: side*magnitude, zone, slope: zone === 'B' ? gain : 0, gain, limit };
+}
+
+function inputForLoad(load, cutIn, cap, gain) {
+  const magnitude = Math.abs(load);
+  const end = cutIn+cap/gain+cap;
+  let input = magnitude;
+  if (magnitude >= end) input = magnitude-cap;
+  else if (magnitude > cutIn) input = (magnitude+gain*cutIn)/(1+gain);
+  return Math.sign(load)*input;
+}
+
+function mechanicalFeel(row) {
+  const active = percent(1/(1+row.gain));
+  if (row.zone === '起助点') return `100% / ${active}`;
+  if (row.zone === '饱和点') return `${active} / 100%`;
+  return row.slope ? active : '100%';
+}
+
+function profile(cutIn, cap, gain, extent) {
+  const end = cutIn+cap/gain;
+  const breakpoints = [-end,-cutIn,0,cutIn,end].filter(x => Math.abs(x) < extent);
+  return [-extent,...breakpoints,extent].map(x => [x,characteristic(x,cutIn,cap,gain).magnitude]);
+}
+
+const nodes = [
+  { speed:0, cap:43, color:'#1c517d' },
+  { speed:21, cap:32, color:'#3b6d96' },
+  { speed:40, cap:23, color:'#5180a3' },
+  { speed:65, cap:15, color:'#567b8d' },
+  { speed:80, cap:11, color:'#688e9c' },
+  { speed:97, cap:9, color:'#7c95ae' },
+  { speed:113, cap:8, color:'#7b8da1' },
+];
+const cutIn = 1;
+const saturationInput = 5.5;
+const displayLimit = 8;
+let mode = 'hand';
+
+function calibration(speed) {
+  const upperIndex = nodes.findIndex(node => node.speed >= speed);
+  const upper = nodes[upperIndex];
+  if (upper.speed === speed) return {cap:upper.cap, interval:null};
+  const lower = nodes[upperIndex-1];
+  const ratio = (speed-lower.speed)/(upper.speed-lower.speed);
+  return {cap:lower.cap+(upper.cap-lower.cap)*ratio, interval:[lower.speed,upper.speed]};
+}
+
+function workingPoint(speed) {
+  const {cap,interval} = calibration(speed);
+  const gain = cap/(saturationInput-cutIn);
+  const hand = mode === 'resistance' ? inputForLoad(value('resistance'),cutIn,cap,gain) : value('hand');
+  return { ...characteristic(hand,cutIn,cap,gain), cap, interval };
+}
+
+const draw = plot('graph', () => {
+  const point = workingPoint(value('speed'));
+  const series = nodes.map(n => ({points:profile(cutIn,n.cap,n.cap/(saturationInput-cutIn),displayLimit),color:n.color,width:1.75}));
+  series.push({points:profile(cutIn,point.cap,point.gain,displayLimit), color:colors.orange,width:3.4});
+  return { xmin:-displayLimit, xmax:displayLimit, ymin:0, ymax:50, xticks:ticks(-8,8,2), yticks:ticks(0,50,10),
+    xlabel:'转向盘力矩 Mₕ（N·m）', ylabel:'助力矩幅值 |Mₐ|（N·m）',
+    bands:[{from:-cutIn,to:cutIn,color:'#eef3f7'}],
+    guides:[{x:point.input,color:colors.orange,dash:[3,3]}], series,
+    markers:[{x:point.input,y:point.magnitude,color:colors.orange}]
+  };
+}, selected => {
+  if (mode === 'hand') setControl('hand',selected);
+  else {
+    const {cap,gain} = workingPoint(value('speed'));
+    const assist = characteristic(selected,cutIn,cap,gain).assist;
+    setControl('resistance',selected+assist);
+  }
+  update();
+});
+
+function update() {
+  const speed = value('speed');
+  const p = workingPoint(speed);
+  const fixedHand = mode === 'hand';
+  byId('hand-settings').hidden = !fixedHand;
+  byId('load-settings').hidden = fixedHand;
+  document.querySelectorAll('[data-mode]').forEach(button => button.setAttribute('aria-pressed',button.dataset.mode === mode));
+  document.querySelectorAll('[data-speed]').forEach(button => button.setAttribute('aria-pressed',Number(button.dataset.speed) === speed));
+  text('hand-reading',fmt(p.input));
+  text('assist-reading',fmt(p.assist));
+  text('feel-reading',mechanicalFeel(p));
+  text('model-point',`${speed} km/h · ${p.interval ? `在 ${p.interval[0]} 和 ${p.interval[1]} km/h 之间插值` : '图8-46车速节点'}`+
+    ` · B 段斜率 ${fmt(p.gain)} · 助力上限 ${fmt(p.cap)} N·m`);
+  const comparison = byId('speed-comparison');
+  comparison.replaceChildren();
+  for (const v of new Set([0,speed,113])) {
+    const point = workingPoint(v);
+    const row = comparison.insertRow();
+    row.classList.toggle('current',v === speed);
+    const heading = document.createElement('th');
+    heading.scope = 'row';
+    heading.textContent = `${v}${v === speed ? '（当前）' : ''}`;
+    row.append(heading);
+    for (const item of [fmt(point.input),fmt(point.assist),mechanicalFeel(point)]) row.insertCell().textContent = item;
+  }
+  const state = {A:'A 段，无助力', B:'B 段，助力随输入变化', D:'D 段，助力饱和', 起助点:'A / B 折点', 饱和点:'B / D 折点'};
+  text('speed-status', `${fixedHand ? `固定转向盘力矩 ${fmt(p.input)} N·m` : `固定等效转向阻力矩 ${fmt(value('resistance'))} N·m`}。当前处于${state[p.zone]}。` +
+    (p.zone.length > 1 ? '折点两侧的路感值按输入幅值由小到大列出。' : '表中保留正负号以表示输入和助力方向。'));
+  draw();
+}
+
+for (const node of nodes) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.dataset.speed = node.speed;
+  button.title = `${node.speed} km/h，最大助力矩约 ${node.cap} N·m`;
+  button.setAttribute('aria-label',`${node.speed} km/h`);
+  const swatch = document.createElement('i');
+  swatch.style.setProperty('--color',node.color);
+  swatch.setAttribute('aria-hidden','true');
+  button.append(swatch,String(node.speed));
+  button.addEventListener('click', () => {
+    setControl('speed',node.speed);
+    update();
+  });
+  byId('speeds').append(button);
+}
+document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
+  mode = button.dataset.mode;
+  update();
+}));
+byId('reset').addEventListener('click', () => {
+  mode = 'hand';
+  setControls({speed:40,hand:3,resistance:12});
+  update();
+});
+bindControls(update);
+update();
+  </script>
+<script>
+/* 防右键与查看源代码快捷键 */
+(function(){
+  document.addEventListener('contextmenu',function(e){e.preventDefault();});
+  document.addEventListener('keydown',function(e){
+    var k=(e.key||'').toLowerCase();
+    if(e.key==='F12'||
+       (e.ctrlKey&&k==='u')||
+       (e.ctrlKey&&k==='s')||
+       (e.ctrlKey&&e.shiftKey&&(k==='i'||k==='j'||k==='c'))||
+       (e.metaKey&&e.altKey&&(k==='i'||k==='j'||k==='c'||k==='u'))||
+       (e.metaKey&&k==='u')||(e.metaKey&&k==='s')){
+      e.preventDefault();e.stopPropagation();return false;
+    }
+  },true);
+})();
+</script>
+</body>
+</html>
